@@ -16,8 +16,6 @@ char *readline(char *prompt)
     return cpy;
 }
 
-void add_history(char *unused) {}
-
 #else
 #include <editline/readline.h>
 #include <editline/history.h>
@@ -33,7 +31,6 @@ int main(int argc, char **argv)
     {
 
         char *input = readline("clisp> ");
-        add_history(input);
 
         printf("No you're a %s\n", input);
         free(input);
