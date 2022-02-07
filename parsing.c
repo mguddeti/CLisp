@@ -55,6 +55,16 @@ int main(int argc, char **argv)
             /* On Success Print the AST */
             mpc_ast_print(r.output);
             mpc_ast_delete(r.output);
+            /* Load AST from output */
+            mpc_ast_t *a = r.output;
+            printf("Tag: %s\n", a->tag);
+            printf("Contents: %s\n", a->contents);
+            printf("Number of children: %i\n", a->children_num);
+            mpc_ast_t *c0 = a->children[0];
+            printf("First Child Tag: %s\n", c0->tag);
+            printf("First Child Contents: %s\n", c0->contents);
+            printf("First Child Number of children: %i\n",
+                   c0->children_num);
         }
         else
         {
