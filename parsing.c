@@ -24,7 +24,6 @@ char *readline(char *prompt)
 int number_of_nodes(mpc_ast_t *t);
 long eval(mpc_ast_t *t);
 long eval_op(long x, char *op, long y);
-int nodalvalue(mpc_ast_t *obj);
 
 int main(int argc, char **argv)
 {
@@ -62,7 +61,6 @@ int main(int argc, char **argv)
             mpc_ast_t *a = r.output;
             long result = eval(a);
             printf("theirs + %d\n", number_of_nodes(a));
-            printf("mine + %d\n", nodalvalue(a));
             printf("%li\n", result);
             mpc_ast_delete(r.output);
         }
@@ -142,21 +140,4 @@ long eval_op(long x, char *op, long y)
         return x / y;
     }
     return 0;
-}
-
-int nodalvalue(mpc_ast_t *obj)
-{
-    if (obj->children_num == 0)
-    {
-        return 1;
-    }
-    else
-    {
-        int total = 0;
-        for (int l = 0; l < obj->children_num; l++)
-        {
-            total += nodalvalue(obj->children[l]);
-        }
-        return total;
-    }
 }
