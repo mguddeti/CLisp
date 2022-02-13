@@ -23,6 +23,8 @@ char *readline(char *prompt)
 #endif
 int number_of_nodes(mpc_ast_t *t);
 long eval(mpc_ast_t *t);
+long eval_op(long x, char *op, long y);
+int nodalvalue(mpc_ast_t *obj);
 
 int main(int argc, char **argv)
 {
@@ -55,19 +57,12 @@ int main(int argc, char **argv)
         if (mpc_parse("<stdin>", input, Lispy, &r))
         {
             /* On Success Print the AST */
-            mpc_ast_print(r.output);
             mpc_ast_delete(r.output);
             /* Load AST from output */
             mpc_ast_t *a = r.output;
-            printf("Tag: %s\n", a->tag);
-            printf("Contents: %s\n", a->contents);
-            printf("Number of children: %i\n", a->children_num);
-            mpc_ast_t *c0 = a->children[0];
-            printf("First Child Tag: %s\n", c0->tag);
-            printf("First Child Contents: %s\n", c0->contents);
-            printf("First Child Number of children: %i\n",
-                   c0->children_num);
-            long result = eval(r.output);
+            long result = eval(a);
+            printf("theirs + %d\n", number_of_nodes(a));
+            printf("mine + %d\n", nodalvalue(a));
             printf("%li\n", result);
             mpc_ast_delete(r.output);
         }
@@ -105,7 +100,6 @@ int number_of_nodes(mpc_ast_t *t)
 
 long eval(mpc_ast_t *t)
 {
-
     /* If tagged as number return it directly. */
     if (strstr(t->tag, "number"))
     {
@@ -117,7 +111,6 @@ long eval(mpc_ast_t *t)
 
     /* We store the third child in `x` */
     long x = eval(t->children[2]);
-
     /* Iterate the remaining children and combining. */
     int i = 3;
     while (strstr(t->children[i]->tag, "expr"))
@@ -127,4 +120,43 @@ long eval(mpc_ast_t *t)
     }
 
     return x;
+}
+
+/* Use operator string to see which operation to perform */
+long eval_op(long x, char *op, long y)
+{
+    if (strcmp(op, "+") == 0)
+    {
+        return x + y;
+    }
+    if (strcmp(op, "-") == 0)
+    {
+        return x - y;
+    }
+    if (strcmp(op, "*") == 0)
+    {
+        return x * y;
+    }
+    if (strcmp(op, "/") == 0)
+    {
+        return x / y;
+    }
+    return 0;
+}
+
+int nodalvalue(mpc_ast_t *obj)
+{
+    if (obj->children_num == 0)
+    {
+        return 1;
+    }
+    else
+    {
+        int total = 0;
+        for (int l = 0; l < obj->children_num; l++)
+        {
+            total += nodalvalue(obj->children[l]);
+        }
+        return total;
+    }
 }
