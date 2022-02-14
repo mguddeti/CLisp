@@ -60,7 +60,6 @@ int main(int argc, char **argv)
             /* Load AST from output */
             mpc_ast_t *a = r.output;
             long result = eval(a);
-            printf("theirs + %d\n", number_of_nodes(a));
             printf("%li\n", result);
             mpc_ast_delete(r.output);
         }
