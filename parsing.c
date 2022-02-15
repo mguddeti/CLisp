@@ -22,6 +22,7 @@ char *readline(char *prompt)
 #include <editline/history.h>
 #endif
 int number_of_nodes(mpc_ast_t *t);
+int nodal_value(mpc_ast_t *t);
 long eval(mpc_ast_t *t);
 long eval_op(long x, char *op, long y);
 
@@ -61,6 +62,7 @@ int main(int argc, char **argv)
             mpc_ast_t *a = r.output;
             long result = eval(a);
             printf("%li\n", result);
+            printf("theirs: %d mine: %d\n", number_of_nodes(a), nodal_value(a));
             mpc_ast_delete(r.output);
         }
         else
@@ -93,6 +95,23 @@ int number_of_nodes(mpc_ast_t *t)
         return total;
     }
     return 0;
+}
+
+int nodal_value(mpc_ast_t *t)
+{
+    if (t->children_num == 0)
+    {
+        return 1;
+    }
+    else
+    {
+        int total = 1;
+        for (int i = 0; i < t->children_num; i++)
+        {
+            total += nodal_value(t->children[i]);
+        }
+        return total;
+    }
 }
 
 long eval(mpc_ast_t *t)
