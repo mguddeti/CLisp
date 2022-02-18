@@ -5,6 +5,31 @@
 
 #ifdef _WIN32
 #include <string.h>
+#else
+#include <editline/history.h>
+#include <editline/readline.h>
+#endif
+
+/* Declare New lval Struct */
+typedef struct
+{
+    int type;
+    long num;
+    int err;
+} lval;
+
+/* Create Enumeration of Possible lval Types */
+enum {
+    LVAL_NUM,
+    LVAL_ERR
+};
+
+/* Create Enumeration of Possible Error Types */
+enum {
+    LERR_DIV_ZERO,
+    LERR_BAD_OP,
+    LERR_BAD_NUM
+};
 
 static char buffer[2048];
 
@@ -17,14 +42,13 @@ char *readline(char *prompt) {
     return cpy;
 }
 
-#else
-#include <editline/history.h>
-#include <editline/readline.h>
-#endif
 int number_of_nodes(mpc_ast_t *t);
-int nodal_value(mpc_ast_t *t);
-long eval(mpc_ast_t *t);
-long eval_op(long x, char *op, long y);
+lval eval(mpc_ast_t *t);
+lval lval_num(long x);
+lval lval_err(int x);
+void lval_print(lval v);
+void lval_println(lval v);
+lval eval_op(lval x, char *op, lval y);
 
 int main(int argc, char **argv) {
     /* Create Some Parsers */
@@ -56,9 +80,8 @@ int main(int argc, char **argv) {
             mpc_ast_delete(r.output);
             /* Load AST from output */
             mpc_ast_t *a = r.output;
-            long result = eval(a);
-            printf("%li\n", result);
-            printf("theirs: %d mine: %d\n", number_of_nodes(a), nodal_value(a));
+            lval result = eval(a);
+            lval_println(result);
             mpc_ast_delete(r.output);
         } else {
             /* Otherwise Print the Error */
@@ -87,30 +110,17 @@ int number_of_nodes(mpc_ast_t *t) {
     return 0;
 }
 
-int nodal_value(mpc_ast_t *t) {
-    if (t->children_num == 0) {
-        return 1;
-    } else {
-        int total = 1;
-        for (int i = 0; i < t->children_num; i++) {
-            total += nodal_value(t->children[i]);
-        }
-        return total;
-    }
-}
-
-long eval(mpc_ast_t *t) {
-    /* If tagged as number return it directly. */
+lval eval(mpc_ast_t *t) {
     if (strstr(t->tag, "number")) {
-        return atoi(t->contents);
+        /* Check if there is some error in conversion */
+        errno = 0;
+        long x = strtol(t->contents, NULL, 10);
+        return errno != ERANGE ? lval_num(x) : lval_err(LERR_BAD_NUM);
     }
 
-    /* The operator is always second child. */
     char *op = t->children[1]->contents;
+    lval x = eval(t->children[2]);
 
-    /* We store the third child in `x` */
-    long x = eval(t->children[2]);
-    /* Iterate the remaining children and combining. */
     int i = 3;
     while (strstr(t->children[i]->tag, "expr")) {
         x = eval_op(x, op, eval(t->children[i]));
@@ -119,44 +129,6 @@ long eval(mpc_ast_t *t) {
 
     return x;
 }
-
-/* Use operator string to see which operation to perform */
-long eval_op(long x, char *op, long y) {
-    if (strcmp(op, "+") == 0) {
-        return x + y;
-    }
-    if (strcmp(op, "-") == 0) {
-        return x - y;
-    }
-    if (strcmp(op, "*") == 0) {
-        return x * y;
-    }
-    if (strcmp(op, "/") == 0) {
-        return x / y;
-    }
-    return 0;
-}
-
-/* Declare New lval Struct */
-typedef struct
-{
-    int type;
-    long num;
-    int err;
-} lval;
-
-/* Create Enumeration of Possible lval Types */
-enum {
-    LVAL_NUM,
-    LVAL_ERR
-};
-
-/* Create Enumeration of Possible Error Types */
-enum {
-    LERR_DIV_ZERO,
-    LERR_BAD_OP,
-    LERR_BAD_NUM
-};
 
 /* Create a new number type lval */
 lval lval_num(long x) {
